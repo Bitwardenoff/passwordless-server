@@ -47,13 +47,14 @@ namespace Passwordless.Service.Migrations.Sqlite
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TenantId")
+                    b.Property<string>("Tenant")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TenantId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("Tenant");
 
                     b.ToTable("ApplicationEvents");
                 });
@@ -171,6 +172,68 @@ namespace Passwordless.Service.Migrations.Sqlite
                     b.HasKey("Tenant");
 
                     b.ToTable("AppFeatures");
+                });
+
+            modelBuilder.Entity("Passwordless.Service.Models.Archive", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ArchiveJobId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasMaxLength(104857600)
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Entity")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tenant")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveJobId");
+
+                    b.HasIndex("Tenant", "JobId", "Id");
+
+                    b.ToTable("Archives");
+                });
+
+            modelBuilder.Entity("Passwordless.Service.Models.ArchiveJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<short>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Tenant")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Tenant");
+
+                    b.ToTable("ArchiveJobs");
                 });
 
             modelBuilder.Entity("Passwordless.Service.Models.Authenticator", b =>
@@ -364,7 +427,7 @@ namespace Passwordless.Service.Migrations.Sqlite
                 {
                     b.HasOne("Passwordless.Service.Models.AccountMetaInformation", "Application")
                         .WithMany("Events")
-                        .HasForeignKey("TenantId")
+                        .HasForeignKey("Tenant")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -376,6 +439,32 @@ namespace Passwordless.Service.Migrations.Sqlite
                     b.HasOne("Passwordless.Service.Models.AccountMetaInformation", "Application")
                         .WithOne("Features")
                         .HasForeignKey("Passwordless.Service.Models.AppFeature", "Tenant")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
+            modelBuilder.Entity("Passwordless.Service.Models.Archive", b =>
+                {
+                    b.HasOne("Passwordless.Service.Models.ArchiveJob", null)
+                        .WithMany("Archives")
+                        .HasForeignKey("ArchiveJobId");
+
+                    b.HasOne("Passwordless.Service.Models.AccountMetaInformation", "Application")
+                        .WithMany("Archives")
+                        .HasForeignKey("Tenant")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
+            modelBuilder.Entity("Passwordless.Service.Models.ArchiveJob", b =>
+                {
+                    b.HasOne("Passwordless.Service.Models.AccountMetaInformation", "Application")
+                        .WithMany("ArchiveJobs")
+                        .HasForeignKey("Tenant")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -428,6 +517,10 @@ namespace Passwordless.Service.Migrations.Sqlite
 
             modelBuilder.Entity("Passwordless.Service.Models.AccountMetaInformation", b =>
                 {
+                    b.Navigation("ArchiveJobs");
+
+                    b.Navigation("Archives");
+
                     b.Navigation("DispatchedEmails");
 
                     b.Navigation("Events");
@@ -442,6 +535,11 @@ namespace Passwordless.Service.Migrations.Sqlite
             modelBuilder.Entity("Passwordless.Service.Models.AppFeature", b =>
                 {
                     b.Navigation("Authenticators");
+                });
+
+            modelBuilder.Entity("Passwordless.Service.Models.ArchiveJob", b =>
+                {
+                    b.Navigation("Archives");
                 });
 #pragma warning restore 612, 618
         }

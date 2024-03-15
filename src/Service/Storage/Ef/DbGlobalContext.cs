@@ -7,6 +7,7 @@ using Passwordless.Common.Extensions;
 using Passwordless.Common.Utils;
 using Passwordless.Service.EventLog.Models;
 using Passwordless.Service.Models;
+using Passwordless.Service.Storage.Ef.Converters;
 using Passwordless.Service.Storage.Ef.ValueComparers;
 
 namespace Passwordless.Service.Storage.Ef;
@@ -28,6 +29,8 @@ public abstract class DbGlobalContext : DbContext
     public DbSet<DispatchedEmail> DispatchedEmails => Set<DispatchedEmail>();
     public DbSet<PeriodicCredentialReport> PeriodicCredentialReports => Set<PeriodicCredentialReport>();
     public DbSet<PeriodicActiveUserReport> PeriodicActiveUserReports => Set<PeriodicActiveUserReport>();
+    public DbSet<ArchiveJob> ArchiveJobs => Set<ArchiveJob>();
+    public DbSet<Archive> Archives => Set<Archive>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,9 +94,10 @@ public abstract class DbGlobalContext : DbContext
         modelBuilder.Entity<ApplicationEvent>(builder =>
         {
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.Tenant).HasColumnName("TenantId");
             builder.HasOne(x => x.Application)
                 .WithMany(x => x.Events)
-                .HasForeignKey(x => x.TenantId)
+                .HasForeignKey(x => x.Tenant)
                 .IsRequired();
         });
 
@@ -125,7 +129,34 @@ public abstract class DbGlobalContext : DbContext
                 .IsRequired();
         });
 
+        modelBuilder.Entity<ArchiveJob>(builder =>
+        {
+            builder.HasKey(x => x.Id);
+
+            builder.HasOne(x => x.Application)
+                .WithMany(x => x.ArchiveJobs)
+                .HasForeignKey(x => x.Tenant)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<Archive>(builder =>
+        {
+            builder.HasKey(x => x.Id);
+
+            builder.HasOne(x => x.Application)
+                .WithMany(x => x.Archives)
+                .HasForeignKey(x => x.Tenant)
+                .IsRequired();
+
+            builder.HasIndex(x => new { x.Tenant, x.JobId, x.Id });
+        });
+
         base.OnModelCreating(modelBuilder);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<Type>().HaveConversion<TypeConverter>();
     }
 
     public Task SeedDefaultApplicationAsync(string appName, string publicKey, string privateKey)

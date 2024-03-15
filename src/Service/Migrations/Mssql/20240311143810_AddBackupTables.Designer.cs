@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Passwordless.Service.Storage.Ef;
 
@@ -11,9 +12,11 @@ using Passwordless.Service.Storage.Ef;
 namespace Passwordless.Service.Migrations.Mssql
 {
     [DbContext(typeof(DbGlobalMsSqlContext))]
-    partial class MsSqlContextModelSnapshot : ModelSnapshot
+    [Migration("20240311143810_AddBackupTables")]
+    partial class AddBackupTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,14 +55,13 @@ namespace Passwordless.Service.Migrations.Mssql
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Tenant")
+                    b.Property<string>("TenantId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("TenantId");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Tenant");
+                    b.HasIndex("TenantId");
 
                     b.ToTable("ApplicationEvents");
                 });
@@ -432,7 +434,7 @@ namespace Passwordless.Service.Migrations.Mssql
                 {
                     b.HasOne("Passwordless.Service.Models.AccountMetaInformation", "Application")
                         .WithMany("Events")
-                        .HasForeignKey("Tenant")
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
